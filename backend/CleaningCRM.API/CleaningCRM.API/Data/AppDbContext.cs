@@ -13,5 +13,6 @@ namespace CleaningCRM.API.Data
         public DbSet<Employee> Employees { get; set; }
         public DbSet<Order> Orders { get; set; }
         public DbSet<Payment> Payments { get; set; }
+        public DbSet<User> Users { get; set; }
     }
 }
