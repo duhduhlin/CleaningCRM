@@ -376,22 +376,24 @@
         };
 
         // === БУХГАЛТЕР ===
-        async function loadPayments() {
-            const res = await apiRequest(`${API_URL}/orders`);
-            const orders = await res.json();
-            const tbody = document.querySelector('#paymentsTable tbody');
-            if (!tbody) return;
-            tbody.innerHTML = '';
-            orders.forEach(o => {
-                tbody.innerHTML += `<tr>
-                    <td>${o.id}</td>
-                    <td>${o.client?.name || 'Нет'}</td>
-                    <td>${o.service?.price || 0} руб.</td>
-                    <td>${o.status}</td>
-                    <td>${o.status !== 'Оплачен' ? `<button class="success" onclick="markPaid(${o.id})">💰 Отметить оплату</button>` : '💳 Оплачено'}</td>
-                </tr>`;
-            });
-        }
+       async function loadPayments() {
+    const res = await apiRequest(`${API_URL}/orders`);
+    const orders = await res.json();
+    const tbody = document.querySelector('#paymentsTable tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    orders.forEach(o => {
+        const price = o.service?.price || 0;
+        const clientName = o.client?.name || 'Клиент не указан';
+        tbody.innerHTML += `<tr>
+            <td>${o.id}</td>
+            <td>${clientName}</td>
+            <td>${price} руб.</td>
+            <td>${o.status}</td>
+            <td>${o.status !== 'Оплачен' ? `<button class="success" onclick="markPaid(${o.id})">💰 Отметить оплату</button>` : '💳 Оплачено'}</td>
+        </tr>`;
+    });
+}
 
         window.markPaid = async (id) => {
             await apiRequest(`${API_URL}/orders/${id}`, {
