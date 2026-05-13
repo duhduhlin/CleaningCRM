@@ -1,12 +1,12 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using CleaningCRM.API.Data;
 using Microsoft.EntityFrameworkCore;
+using CleaningCRM.API.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Добавляем CORS
+// CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
@@ -17,7 +17,7 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Добавляем аутентификацию JWT
+// JWT Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {

@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Text.Json.Serialization;
 
 namespace CleaningCRM.API.Models
 {
@@ -12,8 +12,12 @@ namespace CleaningCRM.API.Models
         public string Address { get; set; }
         public string Status { get; set; } = "Новый";
 
-        public Client Client { get; set; }
-        public Service Service { get; set; }
-        public Employee Employee { get; set; }
+        // Добавьте [JsonIgnore], чтобы не требовать эти поля в JSON-запросе
+        [JsonIgnore]
+        public Client? Client { get; set; }
+        [JsonIgnore]
+        public Service? Service { get; set; }
+        [JsonIgnore]
+        public Employee? Employee { get; set; }
     }
 }
