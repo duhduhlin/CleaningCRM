@@ -2,411 +2,138 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Клининг CRM</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f0f2f5;
-            padding: 20px;
-        }
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-        h1 {
-            color: #2c3e50;
-            margin-bottom: 30px;
-            text-align: center;
-        }
-        h2 {
-            color: #34495e;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 10px;
-        }
-        .cards-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
-            gap: 30px;
-        }
-        .card {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .form-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-        input, select {
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 14px;
-            flex: 1;
-            min-width: 150px;
-        }
-        button {
-            background: #3498db;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background 0.3s;
-        }
-        button:hover {
-            background: #2980b9;
-        }
-        button.delete {
-            background: #e74c3c;
-        }
-        button.delete:hover {
-            background: #c0392b;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-        th, td {
-            padding: 10px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-        th {
-            background: #3498db;
-            color: white;
-        }
-        tr:hover {
-            background: #f5f5f5;
-        }
-        .error {
-            background: #e74c3c;
-            color: white;
-            padding: 10px;
-            border-radius: 6px;
-            margin-bottom: 20px;
-            display: none;
-        }
-        .status-new { background: #f39c12; color: white; padding: 4px 8px; border-radius: 4px; display: inline-block; }
-        .status-work { background: #3498db; color: white; padding: 4px 8px; border-radius: 4px; display: inline-block; }
-        .status-done { background: #27ae60; color: white; padding: 4px 8px; border-radius: 4px; display: inline-block; }
-        .status-paid { background: #9b59b6; color: white; padding: 4px 8px; border-radius: 4px; display: inline-block; }
-        select.status-select {
-            padding: 5px;
-            border-radius: 4px;
-            font-size: 12px;
-            width: 110px;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; }
+        .login-container { background: white; border-radius: 16px; padding: 40px; width: 400px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+        .login-container h1 { text-align: center; margin-bottom: 30px; }
+        .login-container input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; }
+        .login-container button { width: 100%; padding: 12px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; }
+        .main-container { display: none; max-width: 1400px; margin: 0 auto; padding: 20px; width: 100%; }
+        .header { background: white; padding: 15px 20px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; }
+        .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #3498db; color: white; }
+        button { background: #3498db; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin: 5px; }
+        .delete { background: #e74c3c; }
+        input, select { padding: 8px; margin: 5px; border: 1px solid #ddd; border-radius: 4px; }
+        .error { color: red; text-align: center; margin-top: 10px; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🧹 Клининг CRM - Чистый дом</h1>
-        
-        <div id="error" class="error"></div>
-        
-        <div class="cards-container">
-            <!-- Клиенты -->
-            <div class="card">
-                <h2>👥 Клиенты</h2>
-                <div class="form-group">
-                    <input type="text" id="clientName" placeholder="Имя">
-                    <input type="text" id="clientPhone" placeholder="Телефон">
-                    <input type="email" id="clientEmail" placeholder="Email">
-                    <button onclick="addClient()">➕ Добавить</button>
-                </div>
-                <div style="overflow-x: auto;">
-                    <table id="clientsTable">
-                        <thead>
-                            <tr><th>ID</th><th>Имя</th><th>Телефон</th><th>Email</th><th>Действия</th></tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-            
-            <!-- Заказы -->
-            <div class="card">
-                <h2>📋 Заказы</h2>
-                <div class="form-group">
-                    <input type="text" id="orderAddress" placeholder="Адрес">
-                    <select id="orderClient"><option value="">Выберите клиента</option></select>
-                    <select id="orderService"><option value="">Выберите услугу</option></select>
-                    <select id="orderEmployee"><option value="">Выберите сотрудника</option></select>
-                    <button onclick="addOrder()">➕ Создать</button>
-                </div>
-                <div style="overflow-x: auto;">
-                    <table id="ordersTable">
-                        <thead>
-                            <tr><th>ID</th><th>Клиент</th><th>Услуга</th><th>Сотрудник</th><th>Адрес</th><th>Статус</th><th>Действия</th></tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
+    <div id="loginPanel" class="login-container">
+        <h1>🧹 Клининг CRM</h1>
+        <input type="text" id="username" placeholder="Логин">
+        <input type="password" id="password" placeholder="Пароль">
+        <button onclick="login()">Войти</button>
+        <div id="loginError" class="error"></div>
+        <div style="margin-top:20px; font-size:12px; color:#999; text-align:center;">
+            <p>admin / 123456 - Администратор</p>
+            <p>anna / 123456 - Сотрудник</p>
+            <p>accountant / 123456 - Бухгалтерия</p>
+            <p>director / 123456 - Администрация</p>
         </div>
     </div>
-
+    <div id="mainPanel" class="main-container">
+        <div class="header"><span id="userInfo"></span><button onclick="logout()">Выйти</button></div>
+        <div id="dynamicContent"></div>
+    </div>
     <script>
-        // ⚠️ ВАЖНО: Укажите ваш порт. Visual Studio запускает API на https://localhost:7269 или другом порту
         const API_URL = 'https://localhost:7269/api';
-        
-        // === Функции для работы с клиентами ===
+        let currentToken = null, currentRole = null;
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            try {
+                const res = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                if (!res.ok) throw new Error('Ошибка входа');
+                const data = await res.json();
+                currentToken = data.token; currentRole = data.role;
+                document.getElementById('userInfo').innerHTML = `<strong>${data.username}</strong> <span style="background:#667eea; color:white; padding:4px 12px; border-radius:20px;">${data.role}</span>`;
+                document.getElementById('loginPanel').style.display = 'none';
+                document.getElementById('mainPanel').style.display = 'block';
+                loadInterface();
+            } catch(e) { document.getElementById('loginError').innerText = 'Неверный логин или пароль'; }
+        }
+        function logout() { location.reload(); }
+        async function loadInterface() {
+            const content = document.getElementById('dynamicContent');
+            if (currentRole === 'Admin') {
+                content.innerHTML = `<div class="card"><h2>Клиенты</h2><div><input id="cName" placeholder="Имя"><input id="cPhone" placeholder="Телефон"><input id="cEmail" placeholder="Email"><button onclick="addClient()">Добавить</button></div><table id="clientsTable"><thead><tr><th>ID</th><th>Имя</th><th>Телефон</th><th>Email</th><th></th></tr></thead><tbody></tbody></table></div>
+                <div class="card"><h2>Заказы</h2><div><input id="oAddress" placeholder="Адрес"><select id="oClient"></select><select id="oService"></select><select id="oEmployee"></select><button onclick="addOrder()">Создать</button></div><table id="ordersTable"><thead><tr><th>ID</th><th>Клиент</th><th>Услуга</th><th>Сотрудник</th><th>Статус</th><th></th></tr></thead><tbody></tbody></table></div>`;
+                await loadClients(); await loadOrders(); await loadSelects();
+            } else if (currentRole === 'Employee') {
+                content.innerHTML = `<div class="card"><h2>Мои заказы</h2><table id="myOrders"><thead><tr><th>ID</th><th>Клиент</th><th>Услуга</th><th>Адрес</th><th>Статус</th><th></th></tr></thead><tbody></tbody></table></div>`;
+                await loadMyOrders();
+            } else if (currentRole === 'Accountant') {
+                content.innerHTML = `<div class="card"><h2>Платежи</h2><table id="paymentsTable"><thead><tr><th>Заказ</th><th>Клиент</th><th>Сумма</th><th>Статус</th><th></th></tr></thead><tbody></tbody></table></div>`;
+                await loadPayments();
+            } else if (currentRole === 'Director') {
+                content.innerHTML = `<div class="card"><h2>Статистика</h2><div id="stats"></div></div>`;
+                await loadStats();
+            }
+        }
         async function loadClients() {
-            try {
-                const response = await fetch(`${API_URL}/clients`);
-                if (!response.ok) throw new Error('Ошибка загрузки клиентов');
-                const clients = await response.json();
-                
-                const tbody = document.querySelector('#clientsTable tbody');
-                tbody.innerHTML = '';
-                clients.forEach(client => {
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${client.id}</td>
-                            <td>${escapeHtml(client.name)}</td>
-                            <td>${escapeHtml(client.phone)}</td>
-                            <td>${escapeHtml(client.email)}</td>
-                            <td><button class="delete" onclick="deleteClient(${client.id})">🗑 Удалить</button></td>
-                        </tr>
-                    `;
-                });
-                
-                // Обновляем select заказов
-                const select = document.getElementById('orderClient');
-                select.innerHTML = '<option value="">Выберите клиента</option>';
-                clients.forEach(client => {
-                    select.innerHTML += `<option value="${client.id}">${escapeHtml(client.name)}</option>`;
-                });
-            } catch (error) {
-                showError(error.message);
-            }
+            const res = await fetch(`${API_URL}/clients`);
+            const clients = await res.json();
+            const tbody = document.querySelector('#clientsTable tbody');
+            tbody.innerHTML = '';
+            clients.forEach(c => tbody.innerHTML += `<tr><td>${c.id}</td><td>${c.name}</td><td>${c.phone}</td><td>${c.email}</td><td><button class="delete" onclick="deleteClient(${c.id})">Удалить</button></td></tr>`);
         }
-        
-        async function addClient() {
-            const name = document.getElementById('clientName').value.trim();
-            const phone = document.getElementById('clientPhone').value.trim();
-            const email = document.getElementById('clientEmail').value.trim();
-            
-            if (!name || !phone || !email) {
-                showError('Заполните все поля клиента');
-                return;
-            }
-            
-            try {
-                const response = await fetch(`${API_URL}/clients`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, phone, email })
-                });
-                
-                if (!response.ok) throw new Error('Ошибка добавления клиента');
-                
-                document.getElementById('clientName').value = '';
-                document.getElementById('clientPhone').value = '';
-                document.getElementById('clientEmail').value = '';
-                await loadClients();
-                hideError();
-            } catch (error) {
-                showError(error.message);
-            }
-        }
-        
-        async function deleteClient(id) {
-            if (!confirm('Удалить клиента? Все его заказы тоже будут удалены.')) return;
-            
-            try {
-                const response = await fetch(`${API_URL}/clients/${id}`, {
-                    method: 'DELETE'
-                });
-                if (!response.ok) throw new Error('Ошибка удаления клиента');
-                await loadClients();
-                await loadOrders();
-            } catch (error) {
-                showError(error.message);
-            }
-        }
-        
-        // === Функции для заказов ===
         async function loadOrders() {
-            try {
-                const response = await fetch(`${API_URL}/orders`);
-                if (!response.ok) throw new Error('Ошибка загрузки заказов');
-                const orders = await response.json();
-                
-                const tbody = document.querySelector('#ordersTable tbody');
-                tbody.innerHTML = '';
-                orders.forEach(order => {
-                    const statusClass = getStatusClass(order.status);
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${order.id}</td>
-                            <td>${escapeHtml(order.client?.name || 'Нет')}</td>
-                            <td>${escapeHtml(order.service?.name || 'Нет')}</td>
-                            <td>${escapeHtml(order.employee?.fullName || 'Нет')}</td>
-                            <td>${escapeHtml(order.address)}</td>
-                            <td>
-                                <select class="status-select" onchange="updateOrderStatus(${order.id}, this.value)">
-                                    <option value="Новый" ${order.status === 'Новый' ? 'selected' : ''}>🟠 Новый</option>
-                                    <option value="В работе" ${order.status === 'В работе' ? 'selected' : ''}>🔵 В работе</option>
-                                    <option value="Выполнен" ${order.status === 'Выполнен' ? 'selected' : ''}>🟢 Выполнен</option>
-                                    <option value="Оплачен" ${order.status === 'Оплачен' ? 'selected' : ''}>🟣 Оплачен</option>
-                                </select>
-                            </td>
-                            <td><button class="delete" onclick="deleteOrder(${order.id})">🗑 Удалить</button></td>
-                        </tr>
-                    `;
-                });
-            } catch (error) {
-                showError(error.message);
-            }
+            const res = await fetch(`${API_URL}/orders`);
+            const orders = await res.json();
+            const tbody = document.querySelector('#ordersTable tbody');
+            tbody.innerHTML = '';
+            orders.forEach(o => tbody.innerHTML += `<tr><td>${o.id}</td><td>${o.client?.name}</td><td>${o.service?.name}</td><td>${o.employee?.fullName}</td><td><select onchange="updateStatus(${o.id}, this.value)"><option ${o.status==='Новый'?'selected':''}>Новый</option><option ${o.status==='В работе'?'selected':''}>В работе</option><option ${o.status==='Выполнен'?'selected':''}>Выполнен</option><option ${o.status==='Оплачен'?'selected':''}>Оплачен</option></select></td><td><button class="delete" onclick="deleteOrder(${o.id})">Удалить</button></td></tr>`);
         }
-        
-        async function addOrder() {
-            const address = document.getElementById('orderAddress').value.trim();
-            const clientId = document.getElementById('orderClient').value;
-            const serviceId = document.getElementById('orderService').value;
-            const employeeId = document.getElementById('orderEmployee').value;
-            
-            if (!address || !clientId || !serviceId || !employeeId) {
-                showError('Заполните все поля заказа');
-                return;
-            }
-            
-            try {
-                const response = await fetch(`${API_URL}/orders`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        clientId: parseInt(clientId),
-                        serviceId: parseInt(serviceId),
-                        employeeId: parseInt(employeeId),
-                        address: address,
-                        status: 'Новый'
-                    })
-                });
-                
-                if (!response.ok) throw new Error('Ошибка создания заказа');
-                
-                document.getElementById('orderAddress').value = '';
-                await loadOrders();
-                hideError();
-            } catch (error) {
-                showError(error.message);
-            }
+        async function loadMyOrders() {
+            const res = await fetch(`${API_URL}/orders`);
+            const orders = await res.json();
+            const tbody = document.querySelector('#myOrders tbody');
+            tbody.innerHTML = '';
+            orders.forEach(o => tbody.innerHTML += `<tr><td>${o.id}</td><td>${o.client?.name}</td><td>${o.service?.name}</td><td>${o.address}</td><td>${o.status}</td><td>${o.status !== 'Выполнен' ? `<button onclick="completeOrder(${o.id})">Выполнить</button>` : '✅'}</td></tr>`);
         }
-        
-        async function updateOrderStatus(id, status) {
-            try {
-                const response = await fetch(`${API_URL}/orders/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(status)
-                });
-                if (!response.ok) throw new Error('Ошибка обновления статуса');
-                await loadOrders();
-            } catch (error) {
-                showError(error.message);
-            }
+        async function loadPayments() {
+            const res = await fetch(`${API_URL}/orders`);
+            const orders = await res.json();
+            const tbody = document.querySelector('#paymentsTable tbody');
+            tbody.innerHTML = '';
+            orders.forEach(o => tbody.innerHTML += `<tr><td>${o.id}</td><td>${o.client?.name}</td><td>${o.service?.price || 0} руб.</td><td>${o.status}</td><td>${o.status !== 'Оплачен' ? `<button onclick="payOrder(${o.id})">Отметить оплату</button>` : '💳 Оплачено'}</td></tr>`);
         }
-        
-        async function deleteOrder(id) {
-            if (!confirm('Удалить заказ?')) return;
-            
-            try {
-                const response = await fetch(`${API_URL}/orders/${id}`, {
-                    method: 'DELETE'
-                });
-                if (!response.ok) throw new Error('Ошибка удаления заказа');
-                await loadOrders();
-            } catch (error) {
-                showError(error.message);
-            }
+        async function loadStats() {
+            const res = await fetch(`${API_URL}/orders`);
+            const orders = await res.json();
+            const total = orders.length;
+            const completed = orders.filter(o => o.status === 'Выполнен' || o.status === 'Оплачен').length;
+            const sum = orders.reduce((s, o) => s + (o.service?.price || 0), 0);
+            document.getElementById('stats').innerHTML = `<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:20px;"><div style="background:#f0f2f5; padding:20px;"><h3>Всего заказов</h3><p style="font-size:32px;">${total}</p></div><div style="background:#f0f2f5; padding:20px;"><h3>Выполнено</h3><p style="font-size:32px;">${completed}</p></div><div style="background:#f0f2f5; padding:20px;"><h3>Выручка</h3><p style="font-size:32px;">${sum} руб.</p></div></div>`;
         }
-        
-        // === Загрузка услуг и сотрудников для селектов ===
-        async function loadServices() {
-            try {
-                const response = await fetch(`${API_URL}/services`);
-                if (!response.ok) throw new Error('Ошибка загрузки услуг');
-                const services = await response.json();
-                const select = document.getElementById('orderService');
-                select.innerHTML = '<option value="">Выберите услугу</option>';
-                services.forEach(service => {
-                    select.innerHTML += `<option value="${service.id}">${escapeHtml(service.name)} (${service.price} руб.)</option>`;
-                });
-            } catch (error) {
-                showError(error.message);
-            }
+        async function loadSelects() {
+            const [clients, services, employees] = await Promise.all([fetch(`${API_URL}/clients`).then(r=>r.json()), fetch(`${API_URL}/services`).then(r=>r.json()), fetch(`${API_URL}/employees`).then(r=>r.json())]);
+            const clientSelect = document.getElementById('oClient');
+            const serviceSelect = document.getElementById('oService');
+            const employeeSelect = document.getElementById('oEmployee');
+            clientSelect.innerHTML = '<option value="">Выберите</option>';
+            services.forEach(s => serviceSelect.innerHTML += `<option value="${s.id}">${s.name} (${s.price} руб.)</option>`);
+            employees.forEach(e => employeeSelect.innerHTML += `<option value="${e.id}">${e.fullName} (${e.position})</option>`);
+            clients.forEach(c => clientSelect.innerHTML += `<option value="${c.id}">${c.name}</option>`);
         }
-        
-        async function loadEmployees() {
-            try {
-                const response = await fetch(`${API_URL}/employees`);
-                if (!response.ok) throw new Error('Ошибка загрузки сотрудников');
-                const employees = await response.json();
-                const select = document.getElementById('orderEmployee');
-                select.innerHTML = '<option value="">Выберите сотрудника</option>';
-                employees.forEach(employee => {
-                    select.innerHTML += `<option value="${employee.id}">${escapeHtml(employee.fullName)} (${employee.position})</option>`;
-                });
-            } catch (error) {
-                showError(error.message);
-            }
-        }
-        
-        // === Вспомогательные функции ===
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/[&<>]/g, function(m) {
-                if (m === '&') return '&amp;';
-                if (m === '<') return '&lt;';
-                if (m === '>') return '&gt;';
-                return m;
-            });
-        }
-        
-        function getStatusClass(status) {
-            switch(status) {
-                case 'Новый': return 'status-new';
-                case 'В работе': return 'status-work';
-                case 'Выполнен': return 'status-done';
-                case 'Оплачен': return 'status-paid';
-                default: return '';
-            }
-        }
-        
-        function showError(message) {
-            const errorDiv = document.getElementById('error');
-            errorDiv.textContent = '❌ ' + message;
-            errorDiv.style.display = 'block';
-            setTimeout(() => {
-                errorDiv.style.display = 'none';
-            }, 5000);
-        }
-        
-        function hideError() {
-            const errorDiv = document.getElementById('error');
-            errorDiv.style.display = 'none';
-        }
-        
-        // === Инициализация при загрузке страницы ===
-        loadClients();
-        loadServices();
-        loadEmployees();
-        loadOrders();
+        window.addClient = async () => {
+            await fetch(`${API_URL}/clients`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: document.getElementById('cName').value, phone: document.getElementById('cPhone').value, email: document.getElementById('cEmail').value }) });
+            loadClients();
+        };
+        window.deleteClient = async (id) => { if(confirm('Удалить?')) { await fetch(`${API_URL}/clients/${id}`, { method: 'DELETE' }); loadClients(); } };
+        window.addOrder = async () => { await fetch(`${API_URL}/orders`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: parseInt(document.getElementById('oClient').value), serviceId: parseInt(document.getElementById('oService').value), employeeId: parseInt(document.getElementById('oEmployee').value), address: document.getElementById('oAddress').value, status: 'Новый' }) }); loadOrders(); };
+        window.updateStatus = async (id, status) => { await fetch(`${API_URL}/orders/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(status) }); loadOrders(); };
+        window.deleteOrder = async (id) => { if(confirm('Удалить заказ?')) { await fetch(`${API_URL}/orders/${id}`, { method: 'DELETE' }); loadOrders(); } };
+        window.completeOrder = async (id) => { await fetch(`${API_URL}/orders/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify('Выполнен') }); loadMyOrders(); };
+        window.payOrder = async (id) => { await fetch(`${API_URL}/orders/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify('Оплачен') }); loadPayments(); };
     </script>
 </body>
 </html>
