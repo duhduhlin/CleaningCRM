@@ -140,6 +140,12 @@
                             <select id="oClient"><option value="">-- Выберите клиента --</option></select>
                             <select id="oService"><option value="">-- Выберите услугу --</option></select>
                             <select id="oEmployee"><option value="">-- Выберите сотрудника --</option></select>
+                            <select id="oStatus">
+                                <option value="Новый">Новый</option>
+                                <option value="В работе">В работе</option>
+                                <option value="Выполнен">Выполнен</option>
+                                <option value="Оплачен">Оплачен</option>
+                            </select>
                             <button class="success" onclick="addOrder()">📦 Создать заказ</button>
                         </div>
                     </div>
@@ -310,6 +316,7 @@
             const clientId = document.getElementById('oClient')?.value;
             const serviceId = document.getElementById('oService')?.value;
             const employeeId = document.getElementById('oEmployee')?.value;
+            const status = document.getElementById('oStatus')?.value;
 
             if (!address || !clientId || !serviceId || !employeeId) {
                 alert('Заполните все поля!');
@@ -321,7 +328,7 @@
                 serviceId: parseInt(serviceId),
                 employeeId: parseInt(employeeId),
                 address: address,
-                status: "Новый",
+                status: status,
                 orderDate: new Date().toISOString()
             };
 
@@ -337,6 +344,7 @@
                     document.getElementById('oClient').value = '';
                     document.getElementById('oService').value = '';
                     document.getElementById('oEmployee').value = '';
+                    document.getElementById('oStatus').value = 'Новый';
                     await loadOrders();
                 } else {
                     const error = await response.text();
@@ -376,24 +384,24 @@
         };
 
         // === БУХГАЛТЕР ===
-       async function loadPayments() {
-    const res = await apiRequest(`${API_URL}/orders`);
-    const orders = await res.json();
-    const tbody = document.querySelector('#paymentsTable tbody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-    orders.forEach(o => {
-        const price = o.service?.price || 0;
-        const clientName = o.client?.name || 'Клиент не указан';
-        tbody.innerHTML += `<tr>
-            <td>${o.id}</td>
-            <td>${clientName}</td>
-            <td>${price} руб.</td>
-            <td>${o.status}</td>
-            <td>${o.status !== 'Оплачен' ? `<button class="success" onclick="markPaid(${o.id})">💰 Отметить оплату</button>` : '💳 Оплачено'}</td>
-        </tr>`;
-    });
-}
+        async function loadPayments() {
+            const res = await apiRequest(`${API_URL}/orders`);
+            const orders = await res.json();
+            const tbody = document.querySelector('#paymentsTable tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            orders.forEach(o => {
+                const price = o.service?.price || 0;
+                const clientName = o.client?.name || 'Клиент не указан';
+                tbody.innerHTML += `<tr>
+                    <td>${o.id}</td>
+                    <td>${clientName}</td>
+                    <td>${price} руб.</td>
+                    <td>${o.status}</td>
+                    <td>${o.status !== 'Оплачен' ? `<button class="success" onclick="markPaid(${o.id})">💰 Отметить оплату</button>` : '💳 Оплачено'}</td>
+                </tr>`;
+            });
+        }
 
         window.markPaid = async (id) => {
             await apiRequest(`${API_URL}/orders/${id}`, {
