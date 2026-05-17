@@ -45,7 +45,6 @@ namespace CleaningCRM.API.Controllers
         [Authorize(Roles = "Employee")]
         public async Task<IActionResult> GetMyOrders()
         {
-            // Получаем ID пользователя из токена
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
             if (userIdClaim == null)
             {
@@ -53,8 +52,6 @@ namespace CleaningCRM.API.Controllers
             }
 
             int userId = int.Parse(userIdClaim.Value);
-
-            // Ищем сотрудника по UserId
             var employee = await _context.Employees.FirstOrDefaultAsync(e => e.UserId == userId);
 
             if (employee == null)
@@ -91,13 +88,38 @@ namespace CleaningCRM.API.Controllers
             return CreatedAtAction(nameof(GetById), new { id = order.Id }, createdOrder);
         }
 
-        [HttpPut("{id}")]
+        // Обновление статуса (старый метод, оставляем для совместимости)
+        [HttpPut("{id}/status")]
         public async Task<IActionResult> UpdateStatus(int id, [FromBody] string status)
         {
             var order = await _context.Orders.FindAsync(id);
             if (order == null) return NotFound();
 
             order.Status = status;
+            await _context.SaveChangesAsync();
+
+            var updatedOrder = await _context.Orders
+                .Include(o => o.Client)
+                .Include(o => o.Service)
+                .Include(o => o.Employee)
+                .FirstOrDefaultAsync(o => o.Id == id);
+
+            return Ok(updatedOrder);
+        }
+
+        // Полное обновление заказа (для редактирования)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateOrder(int id, [FromBody] UpdateOrderRequest request)
+        {
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null) return NotFound();
+
+            order.Address = request.Address;
+            order.ClientId = request.ClientId;
+            order.ServiceId = request.ServiceId;
+            order.EmployeeId = request.EmployeeId;
+            order.Status = request.Status;
+
             await _context.SaveChangesAsync();
 
             var updatedOrder = await _context.Orders
@@ -116,7 +138,6 @@ namespace CleaningCRM.API.Controllers
             var order = await _context.Orders.FindAsync(id);
             if (order == null) return NotFound();
 
-            // Проверяем, что заказ принадлежит сотруднику
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
             if (userIdClaim != null)
             {
@@ -149,5 +170,14 @@ namespace CleaningCRM.API.Controllers
             await _context.SaveChangesAsync();
             return NoContent();
         }
+    }
+
+    public class UpdateOrderRequest
+    {
+        public string Address { get; set; }
+        public int ClientId { get; set; }
+        public int ServiceId { get; set; }
+        public int EmployeeId { get; set; }
+        public string Status { get; set; }
     }
 }
