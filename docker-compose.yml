@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  database:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: cleaningcrm_db
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourStrong!Passw0rd
+      - MSSQL_PID=Express
+    ports:
+      - "1433:1433"
+    volumes:
+      - sql_data:/var/opt/mssql
+      - ./database:/docker-entrypoint-initdb.d
+    restart: unless-stopped
+
+  backend:
+    build: ./backend/CleaningCRM.API
+    container_name: cleaningcrm_backend
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=database;Database=CleaningCRM;User=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True
+    ports:
+      - "5000:5000"
+    depends_on:
+      - database
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: cleaningcrm_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  sql_data:
