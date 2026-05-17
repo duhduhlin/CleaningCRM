@@ -9,12 +9,16 @@ namespace CleaningCRM.API.Models
         public int ServiceId { get; set; }
         public int EmployeeId { get; set; }
         public DateTime OrderDate { get; set; } = DateTime.Now;
-        public string Address { get; set; }
+        public string Address { get; set; } = string.Empty;
         public string Status { get; set; } = "Новый";
 
-        // Убрал [JsonIgnore] - теперь эти поля будут в JSON ответе
+        [JsonIgnore]
         public Client? Client { get; set; }
+
+        [JsonIgnore]
         public Service? Service { get; set; }
+
+        [JsonIgnore]
         public Employee? Employee { get; set; }
     }
 }

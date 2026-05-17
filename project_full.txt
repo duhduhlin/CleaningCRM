@@ -1,0 +1,463 @@
+# ============================================
+# CleaningCRM - ПОЛНОЕ СОСТОЯНИЕ ПРОЕКТА
+# ============================================
+
+## ПОСЛЕДНИЕ КОММИТЫ:
+0db4f62 feat: добавлено полное редактирование заказа
+2a8c0ce feat: добавлен выбор статуса при создании заказа
+145d046 fix: исправлена авторизация и CORS
+
+## ============================================
+## 1. AuthController.cs (ПОЛНЫЙ КОД)
+## ============================================
+
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using CleaningCRM.API.Data;
+using CleaningCRM.API.Models;
+
+namespace CleaningCRM.API.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class AuthController : ControllerBase
+    {
+        private readonly AppDbContext _context;
+        private readonly IConfiguration _configuration;
+
+        public AuthController(AppDbContext context, IConfiguration configuration)
+        {
+            _context = context;
+            _configuration = configuration;
+        }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginRequest request)
+        {
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Username == request.Username);
+
+            if (user == null || user.PasswordHash != request.Password)
+                return Unauthorized(new { message = "Неверный логин или пароль" });
+
+            var token = GenerateJwtToken(user);
+
+            return Ok(new
+            {
+                token,
+                role = user.Role,
+                username = user.Username
+            });
+        }
+
+        private string GenerateJwtToken(User user)
+        {
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("supersecretkeywithatleast32characterslong!"));
+            var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var claims = new[]
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Role, user.Role)
+            };
+
+            var token = new JwtSecurityToken(
+                issuer: "CleaningCRM",
+                audience: "CleaningCRM",
+                claims: claims,
+                expires: DateTime.UtcNow.AddHours(8),
+                signingCredentials: credentials
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+    }
+
+    public class LoginRequest
+    {
+        public string Username { get; set; }
+        public string Password { get; set; }
+    }
+}
+
+## ============================================
+## 2. OrdersController.cs (ПОЛНЫЙ КОД)
+## ============================================
+
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
+using CleaningCRM.API.Data;
+using CleaningCRM.API.Models;
+using System.Security.Claims;
+
+namespace CleaningCRM.API.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class OrdersController : ControllerBase
+    {
+        private readonly AppDbContext _context;
+
+        public OrdersController(AppDbContext context)
+        {
+            _context = context;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            var orders = await _context.Orders
+                .Include(o => o.Client)
+                .Include(o => o.Service)
+                .Include(o => o.Employee)
+                .ToListAsync();
+            return Ok(orders);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var order = await _context.Orders
+                .Include(o => o.Client)
+                .Include(o => o.Service)
+                .Include(o => o.Employee)
+                .FirstOrDefaultAsync(o => o.Id == id);
+            if (order == null) return NotFound();
+            return Ok(order);
+        }
+
+        [HttpGet("my")]
+        [Authorize(Roles = "Employee")]
+        public async Task<IActionResult> GetMyOrders()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+            {
+                return Unauthorized("Не удалось определить пользователя");
+            }
+
+            int userId = int.Parse(userIdClaim.Value);
+            var employee = await _context.Employees.FirstOrDefaultAsync(e => e.UserId == userId);
+
+            if (employee == null)
+            {
+                return Ok(new List<Order>());
+            }
+
+            var orders = await _context.Orders
+                .Include(o => o.Client)
+                .Include(o => o.Service)
+                .Where(o => o.EmployeeId == employee.Id)
+                .ToListAsync();
+
+            return Ok(orders);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] Order order)
+        {
+            if (order.ClientId <= 0 || order.ServiceId <= 0 || order.EmployeeId <= 0 || string.IsNullOrEmpty(order.Address))
+            {
+                return BadRequest("Заполните все поля");
+            }
+
+            _context.Orders.Add(order);
+            await _context.SaveChangesAsync();
+
+            var createdOrder = await _context.Orders
+                .Include(o => o.Client)
+                .Include(o => o.Service)
+                .Include(o => o.Employee)
+                .FirstOrDefaultAsync(o => o.Id == order.Id);
+
+            return CreatedAtAction(nameof(GetById), new { id = order.Id }, createdOrder);
+        }
+
+        [HttpPut("{id}/status")]
+        public async Task<IActionResult> UpdateStatus(int id, [FromBody] string status)
+        {
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null) return NotFound();
+
+            order.Status = status;
+            await _context.SaveChangesAsync();
+
+            var updatedOrder = await _context.Orders
+                .Include(o => o.Client)
+                .Include(o => o.Service)
+                .Include(o => o.Employee)
+                .FirstOrDefaultAsync(o => o.Id == id);
+
+            return Ok(updatedOrder);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateOrder(int id, [FromBody] UpdateOrderRequest request)
+        {
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null) return NotFound();
+
+            order.Address = request.Address;
+            order.ClientId = request.ClientId;
+            order.ServiceId = request.ServiceId;
+            order.EmployeeId = request.EmployeeId;
+            order.Status = request.Status;
+            
+            await _context.SaveChangesAsync();
+
+            var updatedOrder = await _context.Orders
+                .Include(o => o.Client)
+                .Include(o => o.Service)
+                .Include(o => o.Employee)
+                .FirstOrDefaultAsync(o => o.Id == id);
+
+            return Ok(updatedOrder);
+        }
+
+        [HttpPut("{id}/complete")]
+        [Authorize(Roles = "Employee")]
+        public async Task<IActionResult> CompleteOrder(int id)
+        {
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null) return NotFound();
+
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim != null)
+            {
+                int userId = int.Parse(userIdClaim.Value);
+                var employee = await _context.Employees.FirstOrDefaultAsync(e => e.UserId == userId);
+
+                if (employee != null && order.EmployeeId != employee.Id)
+                    return Forbid("Этот заказ назначен другому сотруднику");
+            }
+
+            order.Status = "Выполнен";
+            await _context.SaveChangesAsync();
+
+            var updatedOrder = await _context.Orders
+                .Include(o => o.Client)
+                .Include(o => o.Service)
+                .Include(o => o.Employee)
+                .FirstOrDefaultAsync(o => o.Id == id);
+
+            return Ok(updatedOrder);
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null) return NotFound();
+
+            _context.Orders.Remove(order);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+    }
+
+    public class UpdateOrderRequest
+    {
+        public string Address { get; set; }
+        public int ClientId { get; set; }
+        public int ServiceId { get; set; }
+        public int EmployeeId { get; set; }
+        public string Status { get; set; }
+    }
+}
+
+## ============================================
+## 3. Program.cs (ПОЛНЫЙ КОД)
+## ============================================
+
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Microsoft.EntityFrameworkCore;
+using CleaningCRM.API.Data;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.WebHost.UseUrls("http://localhost:5000");
+
+builder.Services.AddControllers();
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = "CleaningCRM",
+            ValidAudience = "CleaningCRM",
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes("supersecretkeywithatleast32characterslong!"))
+        };
+    });
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
+var app = builder.Build();
+
+app.UseCors("AllowAll");
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapControllers();
+
+app.Run();
+
+## ============================================
+## 4. Employee.cs (ПОЛНЫЙ КОД)
+## ============================================
+
+using System.Text.Json.Serialization;
+
+namespace CleaningCRM.API.Models
+{
+    public class Employee
+    {
+        public int Id { get; set; }
+        public string FullName { get; set; }
+        public string Position { get; set; }
+        public string Phone { get; set; }
+        public string Email { get; set; }
+        
+        public int? UserId { get; set; }
+        
+        [JsonIgnore]
+        public User? User { get; set; }
+        
+        [JsonIgnore]
+        public ICollection<Order>? Orders { get; set; }
+    }
+}
+
+## ============================================
+## 5. User.cs (ПОЛНЫЙ КОД)
+## ============================================
+
+using System.Text.Json.Serialization;
+
+namespace CleaningCRM.API.Models
+{
+    public class User
+    {
+        public int Id { get; set; }
+        public string Username { get; set; }
+        public string PasswordHash { get; set; }
+        public string Role { get; set; }
+        
+        public int? EmployeeId { get; set; }
+        
+        [JsonIgnore]
+        public Employee? Employee { get; set; }
+    }
+}
+
+## ============================================
+## 6. Order.cs (ПОЛНЫЙ КОД)
+## ============================================
+
+using System.Text.Json.Serialization;
+
+namespace CleaningCRM.API.Models
+{
+    public class Order
+    {
+        public int Id { get; set; }
+        public int ClientId { get; set; }
+        public int ServiceId { get; set; }
+        public int EmployeeId { get; set; }
+        public DateTime OrderDate { get; set; } = DateTime.Now;
+        public string Address { get; set; }
+        public string Status { get; set; } = "Новый";
+
+        public Client? Client { get; set; }
+        public Service? Service { get; set; }
+        public Employee? Employee { get; set; }
+    }
+}
+
+## ============================================
+## 7. appsettings.json
+## ============================================
+
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=(localdb)\\MSSQLLocalDB;Database=CleaningCRM;Trusted_Connection=True;TrustServerCertificate=True;"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*"
+}
+
+## ============================================
+## 8. ТЕСТОВЫЕ УЧЕТНЫЕ ЗАПИСИ
+## ============================================
+
+admin / 123456 - Администратор
+anna / 123456 - Сотрудник (Анна Сидорова)
+accountant / 123456 - Бухгалтерия
+director / 123456 - Администрация
+
+## ============================================
+## 9. КОМАНДЫ ДЛЯ ЗАПУСКА
+## ============================================
+
+cd "/c/Users/dobro/OneDrive/Рабочий стол/kursovaya/CleaningCRM/backend/CleaningCRM.API/CleaningCRM.API"
+dotnet run
+
+## ============================================
+## 10. АДРЕСА
+## ============================================
+
+Бэкенд и фронтенд: http://localhost:5000
+
+## ============================================
+## 11. ЧТО РЕАЛИЗОВАНО
+## ============================================
+
+- ✅ JWT авторизация с ролями
+- ✅ CRUD для Clients, Orders, Employees, Services
+- ✅ Связь Employee ↔ User через поле UserId
+- ✅ Фильтры и поиск по заказам
+- ✅ Графики Chart.js для директора
+- ✅ Адаптивный дизайн
+- ✅ Редактирование заказов
+- ✅ Выбор статуса при создании
+
+## ============================================
+## 12. ЧТО МОЖНО УЛУЧШИТЬ
+## ============================================
+
+1. Регистрация клиентов через отдельную форму
+2. Онлайн-оплата
+3. Email/SMS уведомления
+4. Экспорт отчетов в Excel/PDF
+5. Пагинация
+
+## ============================================
+# КОНЕЦ ФАЙЛА
+# ============================================

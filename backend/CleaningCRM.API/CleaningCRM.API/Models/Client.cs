@@ -1,10 +1,18 @@
-﻿namespace CleaningCRM.API.Models
+﻿using System.Text.Json.Serialization;
+
+namespace CleaningCRM.API.Models
 {
     public class Client
     {
         public int Id { get; set; }
-        public string Name { get; set; }
-        public string Phone { get; set; }
-        public string Email { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string? Address { get; set; }
+        public int? UserId { get; set; }
+
+        // ТОЛЬКО ЭТО свойство Orders, НЕТ User!
+        [JsonIgnore]
+        public ICollection<Order>? Orders { get; set; }
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Text.Json.Serialization;
 
 namespace CleaningCRM.API.Models
 {
@@ -7,9 +7,11 @@ namespace CleaningCRM.API.Models
         public int Id { get; set; }
         public int OrderId { get; set; }
         public decimal Amount { get; set; }
-        public DateTime PaymentDate { get; set; } = DateTime.Now;
-        public string Status { get; set; } = "Ожидается";
+        public DateTime PaymentDate { get; set; }
+        public string PaymentMethod { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
 
-        public Order Order { get; set; }
+        [JsonIgnore]
+        public Order? Order { get; set; }
     }
 }
