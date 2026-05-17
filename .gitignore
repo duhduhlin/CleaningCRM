@@ -15,4 +15,4 @@ obj/
 *.suo
 *.user
 *.userosscache
-*.sln.docstates
+*.sln.docstates.env
