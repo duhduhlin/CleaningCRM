@@ -26,7 +26,6 @@ namespace CleaningCRM.API.Controllers
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             var user = await _context.Users
-                .Include(u => u.Employee)
                 .FirstOrDefaultAsync(u => u.Username == request.Username);
 
             if (user == null || user.PasswordHash != request.Password)
@@ -38,8 +37,7 @@ namespace CleaningCRM.API.Controllers
             {
                 token,
                 role = user.Role,
-                username = user.Username,
-                employeeId = user.EmployeeId
+                username = user.Username
             });
         }
 
@@ -52,8 +50,7 @@ namespace CleaningCRM.API.Controllers
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Name, user.Username),
-                new Claim(ClaimTypes.Role, user.Role),
-                new Claim("EmployeeId", user.EmployeeId?.ToString() ?? "")
+                new Claim(ClaimTypes.Role, user.Role)
             };
 
             var token = new JwtSecurityToken(

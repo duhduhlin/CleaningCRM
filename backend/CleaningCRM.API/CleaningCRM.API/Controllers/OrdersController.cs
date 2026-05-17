@@ -45,31 +45,27 @@ namespace CleaningCRM.API.Controllers
         [Authorize(Roles = "Employee")]
         public async Task<IActionResult> GetMyOrders()
         {
-            var username = User.Identity?.Name;
-
-            int? employeeId = null;
-
-            if (username == "anna")
-                employeeId = 1;
-            else if (username == "olga")
-                employeeId = 2;
-
-            if (employeeId == null)
+            // Получаем ID пользователя из токена
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
             {
-                var employee = await _context.Employees
-                    .FirstOrDefaultAsync(e => e.FullName.Contains(username ?? ""));
+                return Unauthorized("Не удалось определить пользователя");
+            }
 
-                if (employee != null)
-                    employeeId = employee.Id;
-                else
-                    return Ok(new List<Order>());
+            int userId = int.Parse(userIdClaim.Value);
+
+            // Ищем сотрудника по UserId
+            var employee = await _context.Employees.FirstOrDefaultAsync(e => e.UserId == userId);
+
+            if (employee == null)
+            {
+                return Ok(new List<Order>());
             }
 
             var orders = await _context.Orders
                 .Include(o => o.Client)
                 .Include(o => o.Service)
-                .Include(o => o.Employee)
-                .Where(o => o.EmployeeId == employeeId)
+                .Where(o => o.EmployeeId == employee.Id)
                 .ToListAsync();
 
             return Ok(orders);
@@ -120,16 +116,16 @@ namespace CleaningCRM.API.Controllers
             var order = await _context.Orders.FindAsync(id);
             if (order == null) return NotFound();
 
-            var username = User.Identity?.Name;
-            int? employeeId = null;
+            // Проверяем, что заказ принадлежит сотруднику
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim != null)
+            {
+                int userId = int.Parse(userIdClaim.Value);
+                var employee = await _context.Employees.FirstOrDefaultAsync(e => e.UserId == userId);
 
-            if (username == "anna")
-                employeeId = 1;
-            else if (username == "olga")
-                employeeId = 2;
-
-            if (employeeId != null && order.EmployeeId != employeeId)
-                return Forbid("Этот заказ назначен другому сотруднику");
+                if (employee != null && order.EmployeeId != employee.Id)
+                    return Forbid("Этот заказ назначен другому сотруднику");
+            }
 
             order.Status = "Выполнен";
             await _context.SaveChangesAsync();
