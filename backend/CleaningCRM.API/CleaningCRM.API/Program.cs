@@ -3,6 +3,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using CleaningCRM.API.Data;
+using CleaningCRM.API.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,6 +41,13 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// Инициализация базы данных и тестовых данных
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    DbInitializer.Initialize(dbContext);
+}
 
 app.UseCors("AllowAll");
 app.UseAuthentication();
