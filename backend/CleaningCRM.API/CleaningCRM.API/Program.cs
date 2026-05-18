@@ -42,13 +42,6 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Инициализация базы данных и тестовых данных
-using (var scope = app.Services.CreateScope())
-{
-    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    DbInitializer.Initialize(dbContext);
-}
-
 app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
